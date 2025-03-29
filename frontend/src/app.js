@@ -2,9 +2,11 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
-import Timer from "./pages/Timer";
+import FocusMode from "./pages/FocusMode";
+import StudyTime from "./pages/StudyTime";
 import Groups from "./pages/Groups";
 import JoinGroups from "./pages/JoinGroups";
+import Chatbot from "./pages/Chatbot";
 import Auth from "./pages/Auth";
 
 function App() {
@@ -45,10 +47,18 @@ function App() {
             }
           />
           <Route
-            path="/timer"
+            path="/focus"
             element={
               <ProtectedRoute>
-                <Timer />
+                <FocusMode />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/study-time"
+            element={
+              <ProtectedRoute>
+                <StudyTime />
               </ProtectedRoute>
             }
           />
@@ -65,6 +75,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <JoinGroups />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chatbot"
+            element={
+              <ProtectedRoute>
+                <Chatbot />
               </ProtectedRoute>
             }
           />
