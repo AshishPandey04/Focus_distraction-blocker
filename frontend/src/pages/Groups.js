@@ -1,144 +1,149 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { groupService } from '../services/groupService';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorMessage from '../components/common/ErrorMessage';
 
-const Groups = () => {
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [groupName, setGroupName] = useState('');
-  const [myGroups, setMyGroups] = useState([]);
-  const navigate = useNavigate();
-  const currentUser = localStorage.getItem('currentUser');
+function Groups() {
+  const [groups, setGroups] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newGroup, setNewGroup] = useState({ name: '', description: '' });
 
+  // Fetch groups on component mount
   useEffect(() => {
-    // Load user's groups from localStorage
-    const loadGroups = () => {
-      const allGroups = JSON.parse(localStorage.getItem('groups') || '[]');
-      const userGroups = allGroups.filter(
-        group => group.members.includes(currentUser) || group.creator === currentUser
-      );
-      setMyGroups(userGroups);
-    };
-    loadGroups();
-  }, [currentUser]);
+    fetchGroups();
+  }, []);
 
-  const handleCreateGroup = (e) => {
-    e.preventDefault();
-    if (!groupName.trim()) return;
-
-    // Get existing groups or initialize empty array
-    const existingGroups = JSON.parse(localStorage.getItem('groups') || '[]');
-    
-    // Create new group
-    const newGroup = {
-      id: Date.now().toString(),
-      name: groupName,
-      creator: currentUser,
-      members: [currentUser],
-      createdAt: new Date().toISOString()
-    };
-
-    // Save to localStorage
-    localStorage.setItem('groups', JSON.stringify([...existingGroups, newGroup]));
-    
-    // Update state
-    setMyGroups([...myGroups, newGroup]);
-    
-    // Reset form
-    setGroupName('');
-    setShowCreateModal(false);
+  const fetchGroups = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const fetchedGroups = await groupService.getMyGroups();
+      setGroups(fetchedGroups);
+    } catch (err) {
+      setError('Failed to fetch groups. Please try again.');
+      console.error('Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      setError('');
+      const createdGroup = await groupService.createGroup(newGroup);
+      setGroups([createdGroup, ...groups]);
+      setNewGroup({ name: '', description: '' });
+      setShowCreateForm(false);
+    } catch (err) {
+      setError('Failed to create group. Please try again.');
+      console.error('Error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Groups</h1>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-          >
-            Create New Group
-          </button>
-        </div>
+    <div className="max-w-6xl mx-auto p-4 space-y-8">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900">My Groups</h1>
+        <button
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
+        >
+          {showCreateForm ? 'Cancel' : 'Create New Group'}
+        </button>
+      </div>
 
-        {/* Groups Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {myGroups.map(group => (
-            <div key={group.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{group.name}</h3>
-                <p className="text-gray-500 text-sm mb-4">
-                  Created by: {group.creator === currentUser ? 'You' : group.creator}
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">
-                    {group.members.length} member{group.members.length !== 1 ? 's' : ''}
-                  </span>
-                  <button
-                    onClick={() => navigate(`/group/${group.id}`)}
-                    className="text-orange-500 hover:text-orange-600 text-sm font-medium"
-                  >
-                    View Group →
-                  </button>
-                </div>
-              </div>
+      {error && <ErrorMessage message={error} />}
+
+      {/* Create Group Form */}
+      {showCreateForm && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">Create New Group</h2>
+          <form onSubmit={handleCreateGroup} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Group Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={newGroup.name}
+                onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                required
+              />
             </div>
-          ))}
-        </div>
-
-        {/* Create Group Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Group</h2>
-              <form onSubmit={handleCreateGroup}>
-                <div className="mb-4">
-                  <label htmlFor="groupName" className="block text-gray-700 mb-2">
-                    Group Name
-                  </label>
-                  <input
-                    type="text"
-                    id="groupName"
-                    value={groupName}
-                    onChange={(e) => setGroupName(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    placeholder="Enter group name"
-                  />
-                </div>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-                  >
-                    Create Group
-                  </button>
-                </div>
-              </form>
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                id="description"
+                value={newGroup.description}
+                onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                rows="3"
+              />
             </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {myGroups.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">You haven't joined any groups yet.</p>
             <button
-              onClick={() => navigate('/join-groups')}
-              className="text-orange-500 hover:text-orange-600 font-medium"
+              type="submit"
+              className="w-full bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
             >
-              Browse Available Groups →
+              Create Group
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Groups List */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {groups.length === 0 ? (
+          <div className="col-span-full text-center py-12 bg-white rounded-lg shadow">
+            <p className="text-gray-500">You haven't joined any groups yet.</p>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="mt-4 text-orange-500 hover:text-orange-600"
+            >
+              Create your first group
             </button>
           </div>
+        ) : (
+          groups.map((group) => (
+            <div key={group._id} className="bg-white p-6 rounded-lg shadow-md">
+              <h3 className="text-xl font-semibold mb-2">{group.name}</h3>
+              {group.description && (
+                <p className="text-gray-600 mb-4">{group.description}</p>
+              )}
+              <div className="border-t pt-4">
+                <p className="text-sm text-gray-500">
+                  Created by: {group.creator.username || group.creator.email}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Members: {group.members.length}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Created: {new Date(group.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>
   );
-};
+}
 
 export default Groups; 

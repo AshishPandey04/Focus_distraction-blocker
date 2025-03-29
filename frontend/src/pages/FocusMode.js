@@ -1,28 +1,56 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
+import { studySessionService } from '../services/studySessionService';
 
 const FocusMode = () => {
   const [isBlocking, setIsBlocking] = useState(false);
   const [time, setTime] = useState(25 * 60); // 25 minutes in seconds
   const [isActive, setIsActive] = useState(false);
+  const [currentSession, setCurrentSession] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     let interval = null;
     if (isActive && time > 0) {
       interval = setInterval(() => {
-        setTime(time => time - 1);
+        setTime((time) => time - 1);
       }, 1000);
     } else if (time === 0) {
       setIsActive(false);
-      setIsBlocking(false);
+      if (currentSession) {
+        handleEndSession();
+      }
     }
     return () => clearInterval(interval);
   }, [isActive, time]);
 
+  const handleStartSession = async () => {
+    try {
+      const session = await studySessionService.startSession();
+      setCurrentSession(session);
+      setIsActive(true);
+    } catch (err) {
+      console.error('Failed to start session:', err);
+    }
+  };
+
+  const handleEndSession = async () => {
+    if (currentSession) {
+      try {
+        await studySessionService.endSession(currentSession._id);
+        setCurrentSession(null);
+      } catch (err) {
+        console.error('Failed to end session:', err);
+      }
+    }
+  };
+
   const toggleTimer = () => {
-    setIsActive(!isActive);
-    setIsBlocking(!isBlocking);
+    if (!isActive && !currentSession) {
+      handleStartSession();
+    } else {
+      setIsActive(!isActive);
+    }
   };
 
   const formatTime = (seconds) => {
@@ -32,14 +60,27 @@ const FocusMode = () => {
   };
 
   const resetTimer = () => {
-    setTime(25 * 60);
     setIsActive(false);
-    setIsBlocking(false);
+    setTime(25 * 60);
+    if (currentSession) {
+      handleEndSession();
+    }
   };
 
   const handleBlockWebsites = () => {
-    // This will be handled by your extension
-    window.open('chrome-extension://ehleajoonjkjfiiijdljilnclommopcc/blocked.html', '_blank');
+    if (window.chrome && window.chrome.runtime) {
+      // Instead of opening the popup directly, trigger the extension's action
+      window.chrome.runtime.sendMessage('ehleajoonjkjfiiijdljilnclommopcc', 
+        { action: "openSettings" }, 
+        function(response) {
+          if (window.chrome.runtime.lastError) {
+            alert('Please make sure the extension is enabled and try refreshing the page.');
+          }
+        }
+      );
+    } else {
+      alert('Please use Google Chrome to access this feature.');
+    }
   };
 
   const handleAllowedApps = () => {
