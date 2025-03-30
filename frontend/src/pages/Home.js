@@ -27,22 +27,7 @@ const Home = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Today's Progress */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Today's Progress</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500">Total Study Time</p>
-                <p className="text-4xl font-bold text-orange-500">{formatStudyTime(todayStudyTime)}</p>
-              </div>
-              <div className="h-20 w-20 bg-orange-100 rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
+       
 
         {/* Focus Mode Button */}
         <button
