@@ -41,11 +41,13 @@ mongoose.connection.on('disconnected', () => {
 const authRoutes = require('./routes/auth');
 const groupRoutes = require('./routes/groups');
 const studySessionRoutes = require('./routes/studySessions');
+const blockedSitesRoutes = require('./routes/blockedSites');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/study-sessions', studySessionRoutes);
+app.use('/api/blocked-sites', blockedSitesRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
