@@ -6,6 +6,9 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Groups from './pages/Groups';
 import JoinGroups from './pages/JoinGroups';
+import Chatbot from './pages/Chatbot';
+import FocusMode from './pages/FocusMode';
+import BlockSites from './pages/BlockSites';
 
 function App() {
   // Check if user is authenticated
@@ -61,6 +64,38 @@ function App() {
               element={
                 <ProtectedRoute>
                   <JoinGroups />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/block-site" 
+              element={
+                <ProtectedRoute>
+                  <BlockSites />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/focus-mode" 
+              element={
+                <ProtectedRoute>
+                  <FocusMode />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/chatbot" 
+              element={
+                <ProtectedRoute>
+                  <Chatbot />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/block-sites" 
+              element={
+                <ProtectedRoute>
+                  <BlockSites />
                 </ProtectedRoute>
               } 
             />

@@ -1,19 +1,22 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { studySessionService } from '../services/studySessionService';
+import { blockSiteService } from '../services/blockSiteService';
 
-const FocusMode = () => {
-  const [isBlocking, setIsBlocking] = useState(false);
+function FocusMode() {
   const [time, setTime] = useState(25 * 60); // 25 minutes in seconds
   const [isActive, setIsActive] = useState(false);
   const [currentSession, setCurrentSession] = useState(null);
+  const [error, setError] = useState('');
+  const [blockedSites, setBlockedSites] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     let interval = null;
     if (isActive && time > 0) {
       interval = setInterval(() => {
-        setTime((time) => time - 1);
+        setTime((prevTime) => prevTime - 1);
       }, 1000);
     } else if (time === 0) {
       setIsActive(false);
@@ -24,24 +27,43 @@ const FocusMode = () => {
     return () => clearInterval(interval);
   }, [isActive, time]);
 
+  useEffect(() => {
+    fetchBlockedSites();
+  }, []);
+
+  const fetchBlockedSites = async () => {
+    try {
+      const sites = await blockSiteService.getBlockedSites();
+      setBlockedSites(sites);
+    } catch (err) {
+      console.error('Error fetching blocked sites:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleStartSession = async () => {
     try {
       const session = await studySessionService.startSession();
       setCurrentSession(session);
       setIsActive(true);
+      setError('');
     } catch (err) {
-      console.error('Failed to start session:', err);
+      setError('Failed to start session. Please try again.');
+      console.error('Error starting session:', err);
     }
   };
 
   const handleEndSession = async () => {
-    if (currentSession) {
-      try {
+    try {
+      if (currentSession) {
         await studySessionService.endSession(currentSession._id);
         setCurrentSession(null);
-      } catch (err) {
-        console.error('Failed to end session:', err);
       }
+      setError('');
+    } catch (err) {
+      setError('Failed to end session. Please try again.');
+      console.error('Error ending session:', err);
     }
   };
 
@@ -53,34 +75,17 @@ const FocusMode = () => {
     }
   };
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  const resetTimer = () => {
+  const resetTimer = async () => {
+    if (currentSession) {
+      await handleEndSession();
+    }
     setIsActive(false);
     setTime(25 * 60);
-    if (currentSession) {
-      handleEndSession();
-    }
+    setError('');
   };
 
   const handleBlockWebsites = () => {
-    if (window.chrome && window.chrome.runtime) {
-      // Instead of opening the popup directly, trigger the extension's action
-      window.chrome.runtime.sendMessage('ehleajoonjkjfiiijdljilnclommopcc', 
-        { action: "openSettings" }, 
-        function(response) {
-          if (window.chrome.runtime.lastError) {
-            alert('Please make sure the extension is enabled and try refreshing the page.');
-          }
-        }
-      );
-    } else {
-      alert('Please use Google Chrome to access this feature.');
-    }
+    navigate('/block-site');
   };
 
   const handleAllowedApps = () => {
@@ -150,9 +155,44 @@ const FocusMode = () => {
             </div>
           </div>
         </div>
+
+        {error && (
+          <div className="mt-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            {error}
+          </div>
+        )}
+
+        <div className="mt-8 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Blocked Sites</h2>
+            <button
+              onClick={() => navigate('/block-sites')}
+              className="text-orange-500 hover:text-orange-600 font-semibold flex items-center"
+            >
+              Manage Blocked Sites
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          
+          <div className="bg-gray-50 rounded-lg p-4">
+            {isLoading ? (
+              <p className="text-gray-500 text-center">Loading blocked sites...</p>
+            ) : blockedSites.length === 0 ? (
+              <p className="text-gray-500 text-center">No sites blocked yet</p>
+            ) : (
+              <ul className="space-y-2 text-gray-600">
+                {blockedSites.map(site => (
+                  <li key={site._id}>• {site.url}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default FocusMode; 

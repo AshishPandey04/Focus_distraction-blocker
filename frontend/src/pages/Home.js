@@ -24,8 +24,8 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Today's Progress */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="p-6">
@@ -46,7 +46,7 @@ const Home = () => {
 
         {/* Focus Mode Button */}
         <button
-          onClick={() => navigate('/focus')}
+          onClick={() => navigate('/focus-mode')}
           className="w-full bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
         >
           <div className="p-6 flex items-center justify-between">
@@ -68,34 +68,16 @@ const Home = () => {
           onClick={() => navigate('/chatbot')}
           className="w-full bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
         >
-          <div className="p-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Need Help?</h2>
-              <p className="text-gray-500 mt-1">Chat with our AI Assistant for study tips and support</p>
-            </div>
-            <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-            </div>
+          <div className="p-6">
+            <h3 className="text-xl font-semibold mb-2">AI Study Assistant</h3>
+            <p className="text-gray-600">
+              Get help with your studies using our AI-powered chatbot.
+            </p>
           </div>
         </button>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl shadow-md overflow-hidden p-4">
-            <div className="text-center">
-              <p className="text-gray-500">Study Streak</p>
-              <p className="text-2xl font-bold text-orange-500">3 days</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md overflow-hidden p-4">
-            <div className="text-center">
-              <p className="text-gray-500">Focus Score</p>
-              <p className="text-2xl font-bold text-orange-500">85%</p>
-            </div>
-          </div>
-        </div>
+        
+        
       </div>
     </div>
   );
