@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { studySessionService } from '../services/studySessionService';
 import { blockSiteService } from '../services/blockSiteService';
@@ -7,40 +7,61 @@ function FocusMode() {
   const [time, setTime] = useState(25 * 60); // 25 minutes in seconds
   const [isActive, setIsActive] = useState(false);
   const [currentSession, setCurrentSession] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [blockedSites, setBlockedSites] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Fetch blocked sites when component mounts
   useEffect(() => {
-    let interval = null;
-    if (isActive && time > 0) {
-      interval = setInterval(() => {
-        setTime((prevTime) => prevTime - 1);
-      }, 1000);
-    } else if (time === 0) {
-      setIsActive(false);
-      if (currentSession) {
-        handleEndSession();
+    const fetchBlockedSites = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('http://localhost:5000/api/blocked-apps');
+        if (!response.ok) throw new Error('Failed to fetch blocked apps');
+        const data = await response.json();
+        setBlockedSites(data);
+      } catch (err) {
+        setError('Failed to load blocked applications');
+      } finally {
+        setIsLoading(false);
       }
-    }
-    return () => clearInterval(interval);
-  }, [isActive, time]);
+    };
 
-  useEffect(() => {
     fetchBlockedSites();
   }, []);
 
-  const fetchBlockedSites = async () => {
-    try {
-      const sites = await blockSiteService.getBlockedSites();
-      setBlockedSites(sites);
-    } catch (err) {
-      console.error('Error fetching blocked sites:', err);
-    } finally {
-      setIsLoading(false);
+  const handleEndSession = useCallback(() => {
+    if (currentSession) {
+      // Handle session end logic
+      setCurrentSession(null);
+      setIsActive(false);
     }
-  };
+  }, [currentSession]);
+
+  useEffect(() => {
+    let interval;
+    if (isActive && time > 0) {
+      interval = setInterval(() => {
+        setTime((prevTime) => {
+          if (prevTime <= 1) {
+            clearInterval(interval);
+            handleEndSession();
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+      if (currentSession) {
+        handleEndSession();
+      }
+    };
+  }, [isActive, time, currentSession, handleEndSession]);
 
   const handleStartSession = async () => {
     try {
@@ -54,19 +75,7 @@ function FocusMode() {
     }
   };
 
-  const handleEndSession = async () => {
-    try {
-      if (currentSession) {
-        await studySessionService.endSession(currentSession._id);
-        setCurrentSession(null);
-      }
-      setError('');
-    } catch (err) {
-      setError('Failed to end session. Please try again.');
-      console.error('Error ending session:', err);
-    }
-  };
-
+  // eslint-disable-next-line no-unused-vars
   const toggleTimer = () => {
     if (!isActive && !currentSession) {
       handleStartSession();
@@ -75,6 +84,7 @@ function FocusMode() {
     }
   };
 
+  // eslint-disable-next-line no-unused-vars
   const resetTimer = async () => {
     if (currentSession) {
       await handleEndSession();
@@ -88,9 +98,8 @@ function FocusMode() {
     navigate('/block-site');
   };
 
-  const handleAllowedApps = () => {
-    // This will be implemented later
-    alert('This feature will be available soon!');
+  const handleBlockApps = () => {
+    navigate('/block-apps');
   };
 
   const handleStartFocus = () => {
@@ -98,14 +107,17 @@ function FocusMode() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Focus Mode Setup</h1>
-          <p className="mt-2 text-gray-600">Configure your focus environment before starting</p>
+    <div className="container mx-auto px-4 py-8">
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
         </div>
+      )}
 
-        <div className="space-y-6">
+      {isLoading ? (
+        <div className="text-center py-4">Loading...</div>
+      ) : (
+        <>
           {/* Block Websites Card */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                onClick={handleBlockWebsites}>
@@ -122,75 +134,40 @@ function FocusMode() {
             </div>
           </div>
 
-          {/* Allowed Apps Card */}
+          {/* Block Apps Card */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-               onClick={handleAllowedApps}>
+               onClick={handleBlockApps}>
             <div className="p-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Add Allowed Apps</h2>
-                <p className="text-gray-500 mt-1">Specify which applications are allowed during focus time</p>
+                <h2 className="text-xl font-semibold text-gray-900">Block Apps</h2>
+                <p className="text-gray-500 mt-1">Specify which applications to block during focus time</p>
               </div>
-              <div className="h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
               </div>
             </div>
           </div>
-
-          {/* Start Focus Card */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                onClick={handleStartFocus}>
             <div className="p-6 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Start Focus Session</h2>
-                <p className="text-gray-500 mt-1">Begin your focused study time with the timer</p>
+                <h2 className="text-xl font-semibold text-gray-900">Start Focus Study</h2>
+                
               </div>
-              <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
               </div>
             </div>
           </div>
-        </div>
 
-        {error && (
-          <div className="mt-8 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
 
-        <div className="mt-8 space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Blocked Sites</h2>
-            <button
-              onClick={() => navigate('/block-sites')}
-              className="text-orange-500 hover:text-orange-600 font-semibold flex items-center"
-            >
-              Manage Blocked Sites
-              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="bg-gray-50 rounded-lg p-4">
-            {isLoading ? (
-              <p className="text-gray-500 text-center">Loading blocked sites...</p>
-            ) : blockedSites.length === 0 ? (
-              <p className="text-gray-500 text-center">No sites blocked yet</p>
-            ) : (
-              <ul className="space-y-2 text-gray-600">
-                {blockedSites.map(site => (
-                  <li key={site._id}>• {site.url}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </div>
+        
+        </>
+      )}
     </div>
   );
 }

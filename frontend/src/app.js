@@ -9,6 +9,8 @@ import JoinGroups from './pages/JoinGroups';
 import Chatbot from './pages/Chatbot';
 import FocusMode from './pages/FocusMode';
 import BlockSites from './pages/BlockSites';
+import BlockApps from './pages/BlockApps';
+import StudyTime from './pages/StudyTime';
 
 function App() {
   // Check if user is authenticated
@@ -60,6 +62,14 @@ function App() {
               } 
             />
             <Route 
+              path="/block-apps" 
+              element={
+                <ProtectedRoute>
+                  <BlockApps />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/join-groups" 
               element={
                 <ProtectedRoute>
@@ -99,14 +109,15 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-
-            {/* Redirect root to home if authenticated, otherwise to login */}
             <Route 
-              path="/" 
+              path="/study-time" 
               element={
-                isAuthenticated() ? <Navigate to="/home" replace /> : <Navigate to="/login" replace />
+                <ProtectedRoute>
+                  <StudyTime />
+                </ProtectedRoute>
               } 
             />
+          
 
             {/* Catch all other routes and redirect */}
             <Route 
