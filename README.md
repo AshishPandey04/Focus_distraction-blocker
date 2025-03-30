@@ -29,7 +29,7 @@ distraction-blocker-ai-web3/
 │   │   ├── context/     # State Management
 │── chrome-extension/    # Website Blocker
 │── scripts/             # Automation Scripts
-│── smart-contracts/     # Solidity Contracts
+
 ```
 
 ## Getting Started
@@ -38,7 +38,7 @@ distraction-blocker-ai-web3/
 
 - Node.js (v14 or higher)
 - MongoDB/PostgreSQL
-- MetaMask or similar Web3 wallet
+
 - Chrome browser (for extension)
 
 ### Installation
@@ -67,9 +67,9 @@ distraction-blocker-ai-web3/
 
 - Backend: Node.js + Express
 - Frontend: React.js
-- Blockchain: Solidity + Web3.js
-- AI: TensorFlow.js
-- Database: MongoDB/PostgreSQL
+
+
+- Database: MongoDB
 
 ## License
 
