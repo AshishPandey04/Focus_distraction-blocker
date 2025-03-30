@@ -1,11 +1,11 @@
 # FOCUS: Distraction Blocker 
 
-A comprehensive productivity tool that combines AI-powered focus tracking with Web3 rewards and website blocking capabilities.
+A comprehensive productivity tool that combines AI-powered focus tracking with app and website blocking capabilities.
 
 ## Features
 
 - AI-powered focus tracking and productivity analysis
-- Web3 rewards system for maintaining focus
+
 - Chrome extension for blocking distracting websites
 - Real-time focus mode with progress tracking
 - Smart contract-based reward distribution
