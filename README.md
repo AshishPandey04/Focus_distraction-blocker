@@ -1,4 +1,4 @@
-# Distraction Blocker AI Web3
+# FOCUS: Distraction Blocker 
 
 A comprehensive productivity tool that combines AI-powered focus tracking with Web3 rewards and website blocking capabilities.
 
